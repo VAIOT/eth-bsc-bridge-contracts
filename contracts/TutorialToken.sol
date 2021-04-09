@@ -1,11 +1,10 @@
 pragma solidity ^0.6.0;
 
-import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract TutorialToken is Initializable, ERC20Upgradeable {
+contract TutorialToken is ERC20 {
 
-    function initialize(uint256 amount) public initializer {
+    constructor(uint amount) ERC20('Test ERC20', 'TEST') public {
         _mint(msg.sender, amount);
     }
 }

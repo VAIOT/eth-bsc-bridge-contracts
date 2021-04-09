@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/cryptography/ECDSAUpgradeable.sol";
@@ -15,7 +15,7 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
     using AddressUpgradeable for address;
     using ECDSAUpgradeable for bytes32;
 
-    ERC20Upgradeable private _token;
+    IERC20 private _token;
 
     // STRUCT DECLARATIONS
     struct NonceState {
@@ -52,7 +52,7 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
     initializer 
     onlyContract(token) 
     {
-        _token = ERC20Upgradeable(token);
+        _token = IERC20(token);
         __Ownable_init();
     }
 
@@ -62,7 +62,7 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
     function token()
     public 
     view 
-    returns (ERC20Upgradeable) 
+    returns (IERC20) 
     {
         return _token;
     }

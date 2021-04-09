@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/cryptography/ECDSAUpgradeable.sol";
@@ -8,14 +8,14 @@ import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 
 contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
 
-        // EVENTS
+    // EVENTS
     event TokensLocked(address indexed account, uint256 amount);
     event TokensUnlocked(address indexed account, uint256 amount);
 
     using AddressUpgradeable for address;
     using ECDSAUpgradeable for bytes32;
 
-    ERC20Upgradeable private _token;
+    IERC20 private _token;
 
     // STRUCT DECLARATIONS
     struct NonceState {
@@ -30,7 +30,7 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
     // MODIFIERS
     modifier onlyContract(address account) 
     {
-        require(account.isContract(),"[Validation] The address does not contain a contract");
+        require(account.isContract(), "[Validation] The address does not contain a contract");
         _;
     }
 
@@ -52,7 +52,7 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
     initializer 
     onlyContract(token) 
     {
-        _token = ERC20Upgradeable(token);
+        _token = IERC20(token);
         __Ownable_init();
     }
 
@@ -62,7 +62,7 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
     function token()
     public 
     view 
-    returns (ERC20Upgradeable) 
+    returns (IERC20) 
     {
         return _token;
     }

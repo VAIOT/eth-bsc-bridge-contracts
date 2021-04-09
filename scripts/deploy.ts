@@ -3,8 +3,7 @@ const { ethers, upgrades } = require("hardhat")
 async function deploy() {
 
   const TutorialToken = await ethers.getContractFactory("TutorialToken");
-  const tutorialToken = await upgrades.deployProxy(TutorialToken, [100]);
-  await tutorialToken.deployed();
+  const tutorialToken = await TutorialToken.deploy([100]);
 
   console.log("TutorialToken deployed to:", tutorialToken.address);
 
