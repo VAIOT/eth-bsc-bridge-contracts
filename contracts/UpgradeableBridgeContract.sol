@@ -17,6 +17,7 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
 
     ERC20Upgradeable private _token;
 
+    // STRUCT DECLARATIONS
     struct NonceState {
         uint256 nonce;
         bool isLock;
@@ -24,15 +25,17 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
 
     mapping(address => NonceState) private _addressToNonce;
 
-
     address private _relayerAddress;
 
-    modifier onlyContract(address account) {
-        require(account.isContract(),"[Validation] The address does not contain a contract");
+    // MODIFIERS
+    modifier onlyContract(address account) 
+    {
+        require(account.isContract(), "[Validation] The address does not contain a contract");
         _;
     }
 
-    modifier checkNonce(uint256 nonce, address account) {
+    modifier checkNonce(uint256 nonce, address account) 
+    {
         require(_addressToNonce[account].isLock == true, "No amount is locked");
         require(_addressToNonce[account].nonce == nonce - 1, "Invalid nonce");
         _;
@@ -43,7 +46,12 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
         _;
     }
 
-    function initialize(address token) public initializer onlyContract(token) {
+    // PUBLIC FUNCTIONS
+    function initialize(address token) 
+    public 
+    initializer 
+    onlyContract(token) 
+    {
         _token = ERC20Upgradeable(token);
         __Ownable_init();
     }
@@ -51,11 +59,18 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
     /**
      * @return the token being held.
      */
-    function token() public view returns (ERC20Upgradeable) {
+    function token()
+    public 
+    view 
+    returns (ERC20Upgradeable) 
+    {
         return _token;
     }
 
-    function lock(uint256 amount) public checkIfUnlock(msg.sender){
+    function lock(uint256 amount) 
+    public 
+    checkIfUnlock(msg.sender)
+    {
         require(amount > uint256(0), "The amount must be large than 0");
 
         require(
@@ -66,17 +81,17 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
         emit TokensLocked(msg.sender, amount);
     }
 
-    function unlock(address account, uint256 tokensToUnlock) public {
+    function unlock(address account, uint256 tokensToUnlock) 
+    public 
+    {
         require(token().transfer(account, tokensToUnlock), 'Something went wrong during the token transfer');
         emit TokensUnlocked(account, tokensToUnlock);
     }
 
-    function checkSignatureAndUnlock(
-        address owner,
-        uint256 amount,
-        uint256 nonce,
-        bytes memory signature
-    ) public checkNonce(nonce, owner) {
+    function checkSignatureAndUnlock(address owner, uint256 amount, uint256 nonce, bytes memory signature) 
+    public 
+    checkNonce(nonce, owner) 
+    {
         bytes32 hash = keccak256(abi.encodePacked(amount, nonce, owner));
         bytes32 messageHash = hash.toEthSignedMessageHash();
 
@@ -99,15 +114,27 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable {
         return hash.recover(signature);
     }
 
-    function changeRelayerAddress(address relayerAddress) public onlyOwner {
+    function changeRelayerAddress(address relayerAddress) 
+    public 
+    onlyOwner 
+    {
         _relayerAddress = relayerAddress;
     }
 
-    function getRelayerAddress() public view onlyOwner returns(address) {
+    function getRelayerAddress() 
+    public 
+    view 
+    onlyOwner 
+    returns(address) 
+    {
         return _relayerAddress;
     }
 
-    function getCurrentNonce(address account) public view returns (uint256) {
+    function getCurrentNonce(address account) 
+    public 
+    view 
+    returns (uint256) 
+    {
         return _addressToNonce[account].nonce;
     }
 }
