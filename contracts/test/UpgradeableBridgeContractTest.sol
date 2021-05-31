@@ -1,17 +1,22 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/cryptography/ECDSAUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
+contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // EVENTS
     event TokensLocked(address indexed account, uint256 amount);
     event TokensUnlocked(address indexed account, uint256 amount);
 
+    using SafeMathUpgradeable for uint256;
+    using MathUpgradeable for uint256;
     using AddressUpgradeable for address;
     using ECDSAUpgradeable for bytes32;
 
@@ -68,8 +73,9 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
     }
 
     function lock(uint256 amount) 
-    public 
-    checkIfUnlock(msg.sender)
+    public
+    nonReentrant
+    // checkIfUnlock(msg.sender)
     {
         require(amount > uint256(0), "The amount must be large than 0");
 
@@ -81,15 +87,9 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
         emit TokensLocked(msg.sender, amount);
     }
 
-    function unlock(address account, uint256 tokensToUnlock) 
-    public 
-    {
-        require(token().transfer(account, tokensToUnlock), 'Something went wrong during the token transfer');
-        emit TokensUnlocked(account, tokensToUnlock);
-    }
-
     function checkSignatureAndUnlock(address owner, uint256 amount, uint256 nonce, bytes memory signature) 
     public 
+    nonReentrant
     checkNonce(nonce, owner) 
     {
         bytes32 hash = keccak256(abi.encodePacked(amount, nonce, owner));
@@ -100,18 +100,10 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
         require(signer == _relayerAddress, "Invalid owner");
 
         NonceState storage nonceState = _addressToNonce[owner];
-        nonceState.nonce+= 1;
+        nonceState.nonce += 1;
         nonceState.isLock = false;
 
-        unlock(owner, amount);
-    }
-
-    function recover(bytes32 hash, bytes memory signature)
-    public
-    pure
-    returns (address)
-    {
-        return hash.recover(signature);
+        _unlock(owner, amount);
     }
 
     function changeRelayerAddress(address relayerAddress) 
@@ -138,11 +130,10 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable {
         return _addressToNonce[account].nonce;
     }
 
-    function get()
-    public
-    pure 
-    returns (uint256) 
+    function _unlock(address account, uint256 tokensToUnlock) 
+    private 
     {
-        return 5;
+        require(token().transfer(account, tokensToUnlock), 'Something went wrong during the token transfer');
+        emit TokensUnlocked(account, tokensToUnlock);
     }
 }
