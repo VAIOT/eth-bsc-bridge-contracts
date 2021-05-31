@@ -8,12 +8,13 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
 
     // EVENTS
-    event TokensLocked(address indexed account, uint256 amount);
-    event TokensUnlocked(address indexed account, uint256 amount);
+    event TokensLocked(address indexed account, uint256 amount, uint256 nonce);
+    event TokensUnlocked(address indexed account, uint256 amount, uint256 nonce);
 
     using SafeMathUpgradeable for uint256;
     using MathUpgradeable for uint256;
@@ -24,8 +25,8 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
 
     // STRUCT DECLARATIONS
     struct NonceState {
-        uint256 nonce;
-        bool isLock;
+        uint256 sendNonce;
+        uint256 receiveNonce;
     }
 
     mapping(address => NonceState) private _addressToNonce;
@@ -39,15 +40,15 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
         _;
     }
 
-    modifier checkNonce(uint256 nonce, address account) 
+    modifier checkSendNonce(uint256 nonce, address account) 
     {
-        require(_addressToNonce[account].isLock == true, "No amount is locked");
-        require(_addressToNonce[account].nonce == nonce - 1, "Invalid nonce");
+        require(_addressToNonce[account].sendNonce == nonce - 1, "Invalid send nonce");
         _;
     }
 
-    modifier checkIfUnlock(address account) {
-       require(_addressToNonce[account].isLock == false, "A certain amount is already locked");
+    modifier checkReceiveNonce(uint256 nonce, address account) 
+    {
+        require(_addressToNonce[account].receiveNonce == nonce - 1, "Invalid receive nonce");
         _;
     }
 
@@ -59,6 +60,8 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
     {
         _token = IERC20(token);
         __Ownable_init();
+        __ReentrancyGuard_init();
+        __Pausable_init();
     }
 
     /**
@@ -72,25 +75,30 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
         return _token;
     }
 
-    function lock(uint256 amount) 
+    function lock(uint256 amount, uint256 nonce) 
     public
     nonReentrant
-    checkIfUnlock(msg.sender)
-    {
+    whenNotPaused
+    checkSendNonce(nonce, msg.sender)
+    { 
         require(amount > uint256(0), "The amount must be large than 0");
+
+        NonceState storage nonceState = _addressToNonce[msg.sender];
+        nonceState.sendNonce += 1;
 
         require(
             token().transferFrom(msg.sender, address(this), amount),
             'Something went wrong during the token transfer'
         );
-        _addressToNonce[msg.sender].isLock = true;
-        emit TokensLocked(msg.sender, amount);
+
+        emit TokensLocked(msg.sender, amount, nonce);
     }
 
     function checkSignatureAndUnlock(address owner, uint256 amount, uint256 nonce, bytes memory signature) 
     public 
     nonReentrant
-    checkNonce(nonce, owner) 
+    whenNotPaused
+    checkReceiveNonce(nonce, owner)
     {
         bytes32 hash = keccak256(abi.encodePacked(amount, nonce, owner));
         bytes32 messageHash = hash.toEthSignedMessageHash();
@@ -100,10 +108,9 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
         require(signer == _relayerAddress, "Invalid owner");
 
         NonceState storage nonceState = _addressToNonce[owner];
-        nonceState.nonce += 1;
-        nonceState.isLock = false;
+        nonceState.receiveNonce += 1;
 
-        _unlock(owner, amount);
+        _unlock(owner, amount, nonce);
     }
 
     function changeRelayerAddress(address relayerAddress) 
@@ -122,18 +129,26 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
         return _relayerAddress;
     }
 
-    function getCurrentNonce(address account) 
+    function getSendNonce(address account) 
     public 
     view 
     returns (uint256) 
     {
-        return _addressToNonce[account].nonce;
+        return _addressToNonce[account].sendNonce;
     }
 
-    function _unlock(address account, uint256 tokensToUnlock) 
+    function getReceiveNonce(address account) 
+    public
+    view 
+    returns (uint256) 
+    {
+        return _addressToNonce[account].receiveNonce;
+    }
+
+    function _unlock(address account, uint256 tokensToUnlock, uint256 nonce) 
     private 
     {
         require(token().transfer(account, tokensToUnlock), 'Something went wrong during the token transfer');
-        emit TokensUnlocked(account, tokensToUnlock);
+        emit TokensUnlocked(account, tokensToUnlock, nonce);
     }
 }

@@ -9,11 +9,11 @@ module.exports = {
   networks: {
     ropsten: {
       url: `https://ropsten.infura.io/v3/${ROPSTEN_INFURA_KEY}`,
-      accounts: [`0x${ROPSTEN_PRIVATE_KEY}`]
+      accounts: [`0x0000000000000000000000000000000000000000`]
     },
     bsctestnet: {
       url: `https://data-seed-prebsc-1-s1.binance.org:8545/`,
-      accounts: [`0x${ROPSTEN_PRIVATE_KEY}`],
+      accounts: [`0x0000000000000000000000000000000000000000`],
       chainId: 97,
       gasPrice: 20000000000
     }, 
