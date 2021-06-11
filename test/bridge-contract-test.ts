@@ -2,7 +2,7 @@
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { UpgradeableBridgeContract, TutorialToken } from "../typechain"
-import TutorialTokenArtifact from "../artifacts/contracts/TutorialToken.sol/TutorialToken.json"
+import TutorialTokenArtifact from "../artifacts/contracts/test/TutorialToken.sol/TutorialToken.json"
 
 const { ethers, upgrades, waffle } = require("hardhat")
 const { expect } = chai
@@ -117,44 +117,49 @@ describe('UpgradeableBridgeContract', () => {
 
         it('3.5. check current nonce', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
-            const nonce = await bridgeContract.getCurrentNonce(account1.address)
+            const nonce = await bridgeContract.getSendNonce(account1.address)
             await expect(nonce.toNumber()).to.equal(0)
         })
 
         it('3.6. should revert if lock 0', async () => {
             const msg = "The amount must be large than 0"
-            await expect(bridgeContract.lock(0)).to.be.revertedWith(msg)
+            await expect(bridgeContract.lock(0, 1)).to.be.revertedWith(msg)
         })
 
         it('3.7. transfer amount should exceeds balance', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
             const msg = "ERC20: transfer amount exceeds balance"
-            await expect(bridgeContract.connect(relayer).lock(10)).to.be.revertedWith(msg)
+            await 
+            expect(bridgeContract.connect(relayer).lock(10, 1)).to.be.revertedWith(msg)
         })
 
         it('3.8. should emit TokensLocked event', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
-            await expect(bridgeContract.connect(account1).lock(10)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10)
+            const nonce = await bridgeContract.getSendNonce(account1.address)
+            await expect(bridgeContract.connect(account1).lock(10, nonce.add(1))).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10, nonce.add(1))
         })
 
         it('3.9. invalid nonce', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
-            const msg = "Invalid nonce"
-            await expect(bridgeContract.connect(account1).lock(10)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10)
+            const msg = "Invalid receive nonce"
+            const nonce = await bridgeContract.getSendNonce(account1.address)
+            await expect(bridgeContract.connect(account1).lock(10, nonce.add(1))).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10, nonce.add(1))
             await expect(bridgeContract.checkSignatureAndUnlock(account1.address, 1, 10, signature)).to.be.revertedWith(msg)
         })
 
         it('3.10. invalid signature length', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
             const msg = "invalid signature length"
-            await expect(bridgeContract.connect(account1).lock(10)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10)
+            const nonce = await bridgeContract.getSendNonce(account1.address)
+            await expect(bridgeContract.connect(account1).lock(10, nonce.add(1))).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10, nonce.add(1))
             await expect(bridgeContract.checkSignatureAndUnlock(account1.address, 10, 1, '0x11111111')).to.be.revertedWith(msg)
         })
 
         it('3.11. invalid signature v value', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
+            const nonce = await bridgeContract.getSendNonce(account1.address)
 
-            await expect(bridgeContract.connect(account1).lock(10)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10)
+            await expect(bridgeContract.connect(account1).lock(10, nonce.add(1))).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10, nonce.add(1))
 
             const msg = "invalid signature 'v' value"
             await expect(bridgeContract.checkSignatureAndUnlock(account1.address, 10, 1, '0x1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111')).to.be.revertedWith(msg)
@@ -162,46 +167,80 @@ describe('UpgradeableBridgeContract', () => {
 
         it('3.12. invalid owner', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(account1.address)).add(1)
 
-            await expect(bridgeContract.connect(account1).lock(10)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10)
+            await expect(bridgeContract.connect(account1).lock(10, incrementedNonce)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 10, incrementedNonce)
 
             const msg = "Invalid owner"
-            await expect(bridgeContract.checkSignatureAndUnlock(account1.address, 10, 1, signature)).to.be.revertedWith(msg)
+            await expect(bridgeContract.checkSignatureAndUnlock(account1.address, 10, incrementedNonce, signature)).to.be.revertedWith(msg)
         })
 
         it('3.13. should emit TokensUnlocked event', async () => {
             const [owner] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(owner.address)).add(1)
 
-            await expect(bridgeContract.connect(owner).lock(30)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30)
-            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, 1, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30)
+            await expect(bridgeContract.connect(owner).lock(30, incrementedNonce)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30, incrementedNonce)
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30, incrementedNonce)
         })
 
         it('3.14. nonce should increase', async () => {
             const [owner] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(owner.address)).add(1)
 
-            const nonce = await bridgeContract.getCurrentNonce(signatureOwner)
+            const nonce = await bridgeContract.getSendNonce(signatureOwner)
 
-            await expect(bridgeContract.connect(owner).lock(30)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30)
-            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, 1, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30)
+            await expect(bridgeContract.connect(owner).lock(30, incrementedNonce)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30, incrementedNonce)
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30, incrementedNonce)
 
-            const val = await bridgeContract.getCurrentNonce(signatureOwner)
+            const val = await bridgeContract.getSendNonce(signatureOwner)
             expect(val.toNumber()).to.be.equal(nonce.toNumber() + 1)
         })
 
         it('3.15. lock after lock', async () => {
             const [owner, relayer, account1] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(account1.address)).add(1)
 
-            await expect(bridgeContract.connect(account1).lock(30)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 30)
-            await expect(bridgeContract.connect(account1).lock(5)).to.be.revertedWith("A certain amount is already locked")
+            await expect(bridgeContract.connect(account1).lock(30, incrementedNonce)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 30, incrementedNonce)
+
+            const incrementedNonce2 = await (await bridgeContract.getSendNonce(account1.address)).add(1)
+            await expect(bridgeContract.connect(account1).lock(5, incrementedNonce2)).to.emit(bridgeContract, 'TokensLocked').withArgs(account1.address, 5, incrementedNonce2)
         })
 
-        it('3.15. repeat unlock', async () => {
+        it('3.16. repeat unlock - Invalid receive nonce', async () => {
             const [owner] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(owner.address)).add(1)
 
-            await expect(bridgeContract.connect(owner).lock(30)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30)
+            await expect(bridgeContract.connect(owner).lock(30, incrementedNonce)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30, incrementedNonce)
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30, incrementedNonce)
+            
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce, signature)).to.be.revertedWith("Invalid receive nonce")
+        })
 
-            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, 1, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30)
-            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, 1, signature)).to.be.revertedWith("No amount is locked")
+        it('3.17. repeat unlock - Invalid owner', async () => {
+            const [owner] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(owner.address)).add(1)
+
+            await expect(bridgeContract.connect(owner).lock(30, incrementedNonce)).to.emit(bridgeContract, 'TokensLocked').withArgs(owner.address, 30, incrementedNonce)
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce, signature)).to.emit(bridgeContract, 'TokensUnlocked').withArgs(signatureOwner, 30, incrementedNonce)
+            
+            const incrementedNonce2 = await (await bridgeContract.getSendNonce(owner.address)).add(1)
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce2, signature)).to.be.revertedWith("Invalid owner")
+        })
+
+        it('3.17. lock when contract is paused', async () => {
+            const [owner] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(owner.address)).add(1)
+
+            await bridgeContract.pause()
+            await expect(bridgeContract.connect(owner).lock(30, incrementedNonce)).to.be.revertedWith("Pausable: paused")
+        })
+
+        it('3.18. unlock when contract is paused', async () => {
+            const [owner] = await ethers.getSigners()
+            const incrementedNonce = await (await bridgeContract.getSendNonce(owner.address)).add(1)
+
+            await bridgeContract.pause()
+            await expect(bridgeContract.checkSignatureAndUnlock(signatureOwner, 30, incrementedNonce, signature)).to.be.revertedWith("Pausable: paused")
         })
     })
 })

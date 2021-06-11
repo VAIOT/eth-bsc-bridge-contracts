@@ -151,4 +151,8 @@ contract UpgradeableBridgeContract is Initializable, OwnableUpgradeable, Reentra
         require(token().transfer(account, tokensToUnlock), 'Something went wrong during the token transfer');
         emit TokensUnlocked(account, tokensToUnlock, nonce);
     }
+
+    function pause() public whenNotPaused{
+      _pause();
+    }
 }

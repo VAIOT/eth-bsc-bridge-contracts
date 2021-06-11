@@ -8,8 +8,9 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
 
     // EVENTS
     event TokensLocked(address indexed account, uint256 amount, uint256 nonce);
@@ -59,6 +60,8 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, Ree
     {
         _token = IERC20(token);
         __Ownable_init();
+        __ReentrancyGuard_init();
+        __Pausable_init();
     }
 
     /**
@@ -75,6 +78,7 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, Ree
     function lock(uint256 amount, uint256 nonce) 
     public
     nonReentrant
+    whenNotPaused
     checkSendNonce(nonce, msg.sender)
     { 
         require(amount > uint256(0), "The amount must be large than 0");
@@ -93,6 +97,7 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, Ree
     function checkSignatureAndUnlock(address owner, uint256 amount, uint256 nonce, bytes memory signature) 
     public 
     nonReentrant
+    whenNotPaused
     checkReceiveNonce(nonce, owner)
     {
         bytes32 hash = keccak256(abi.encodePacked(amount, nonce, owner));
@@ -145,5 +150,13 @@ contract UpgradeableBridgeContractTest is Initializable, OwnableUpgradeable, Ree
     {
         require(token().transfer(account, tokensToUnlock), 'Something went wrong during the token transfer');
         emit TokensUnlocked(account, tokensToUnlock, nonce);
+    }
+
+    function get() public pure returns (uint256) {
+        return 5;
+    }
+
+    function pause() public  whenNotPaused{
+      _pause();
     }
 }
