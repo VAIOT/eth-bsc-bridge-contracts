@@ -10,9 +10,7 @@ This repository contains the smart contracts necessary for operating the ETH-BSC
 
 <ul>
     <li>UpgradeableBridgeContract.sol: An upgradeable smart contract that handles the locking and unlocking of tokens as they are transferred between chains. It utilizes OpenZeppelin's libraries for upgradeability, security, and ownership.</li>
-
     <li>VAIToken.sol: A BEP20 token contract example for Binance Smart Chain. It includes standard BEP20 functionalities such as transfer, allowance, and balance management.</li>
-
     <li>VAITokenETH.sol: An ERC777 token contract example for Ethereum. It demonstrates advanced token features including operator permissions and sending tokens with data.</li>
 
 </ul>
