@@ -25,10 +25,9 @@ This repository contains the smart contracts necessary for operating the ETH-BSC
 
 ## Installation
 
-    Clone the repository to your local machine:
+Clone the repository to your local machine:
 
 ```bash
-
 git clone https://github.com/VAIOT/eth-bsc-bridge-contracts.git
 cd eth-bsc-bridge-contracts
 ```
@@ -36,7 +35,7 @@ cd eth-bsc-bridge-contracts
 Install the required npm packages:
 
 ```bash
-    npm install
+npm install
 ```
 
 ## Testing
@@ -44,7 +43,7 @@ Install the required npm packages:
 The repository includes test files for validating the functionality of the smart contracts. To run the tests execute the following command:
 
 ```bash
-    npx hardhat test
+npx hardhat test
 ```
 
 ### Deployment
