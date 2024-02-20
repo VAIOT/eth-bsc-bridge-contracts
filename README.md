@@ -2,93 +2,71 @@
     <img src="assets/vaiotLogo.svg" alt="VAIOT Logo" width="400"/>
 </div>
 
-ETH-BSC Bridge Contracts
+# ETH-BSC Bridge Contracts
 
 This repository contains the smart contracts necessary for operating the ETH-BSC Bridge, facilitating seamless token transfers between the Ethereum (ETH) and Binance Smart Chain (BSC) networks. It includes the UpgradeableBridgeContract, along with token contracts for both networks, ensuring a flexible and secure bridge operation.
-Contracts Overview
 
-    UpgradeableBridgeContract.sol: An upgradeable smart contract that handles the locking and unlocking of tokens as they are transferred between chains. It utilizes OpenZeppelin's libraries for upgradeability, security, and ownership.
+## Contracts Overview
 
-    VAIToken.sol: A BEP20 token contract example for Binance Smart Chain. It includes standard BEP20 functionalities such as transfer, allowance, and balance management.
+<ul>
+    <li>UpgradeableBridgeContract.sol: An upgradeable smart contract that handles the locking and unlocking of tokens as they are transferred between chains. It utilizes OpenZeppelin's libraries for upgradeability, security, and ownership.</li>
 
-    VAITokenETH.sol: An ERC777 token contract example for Ethereum. It demonstrates advanced token features including operator permissions and sending tokens with data.
+    <li>VAIToken.sol: A BEP20 token contract example for Binance Smart Chain. It includes standard BEP20 functionalities such as transfer, allowance, and balance management.</li>
 
-Getting Started
-Prerequisites
+    <li>VAITokenETH.sol: An ERC777 token contract example for Ethereum. It demonstrates advanced token features including operator permissions and sending tokens with data.</li>
 
-    Node.js and npm
-    Truffle or Hardhat for smart contract compilation and deployment
-    Ganache or a testnet/mainnet connection for deployment and testing
+</ul>
 
-Installation
+## Prerequisites
+
+<ul>
+    <li>Node.js and npm</li>
+    <li>Hardhat for smart contract compilation and deployment</li>
+    <li>Ganache or a testnet/mainnet connection for deployment and testing</li>
+</ul>
+
+## Installation
 
     Clone the repository to your local machine:
 
-    bash
+```bash
 
-git clone https://github.com/yourgithub/eth-bsc-bridge-contracts.git
+git clone https://github.com/VAIOT/eth-bsc-bridge-contracts.git
 cd eth-bsc-bridge-contracts
+```
 
 Install the required npm packages:
 
-bash
-
+```bash
     npm install
+```
 
-Testing
+## Testing
 
-The repository includes test files for validating the functionality of the smart contracts. To run the tests:
+The repository includes test files for validating the functionality of the smart contracts. To run the tests execute the following command:
 
-    Ensure you have Ganache running, or configure your truffle-config.js or hardhat.config.js file to connect to a testnet/mainnet.
-
-    Execute the test command:
-
-    bash
-
-truffle test
-
-Or, if using Hardhat:
-
-bash
-
+```bash
     npx hardhat test
+```
 
-Deployment
+### Deployment
 
-    Compile the contracts:
-
-    bash
-
-truffle compile
-
-Or with Hardhat:
-
-bash
+```bash
 
 npx hardhat compile
 
-Deploy the contracts to your chosen network:
+npx hardhat run scripts/deploy.js --network <network_name>
+```
 
-bash
+## Configuration
 
-truffle migrate --network <network_name>
+Update the .env file with all the variables found in the .env.example:
 
-Or with Hardhat:
+```bash
+ROPSTEN_INFURA_KEY = //
+ROPSTEN_PRIVATE_KEY = //
+```
 
-bash
+## Contributing
 
-    npx hardhat run scripts/deploy.js --network <network_name>
-
-Configuration
-
-    Update the .env file with your node URLs, private keys, and any other relevant configurations for deployment.
-
-Contributing
-
-We welcome contributions from the community! Please read our Contributing Guide for details on how to submit pull requests, report issues, or suggest improvements.
-Security
-
-This project is in the development stage and has not undergone a full security audit. Use at your own risk. If you discover a security issue, please report it privately to [security@example.com].
-License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
