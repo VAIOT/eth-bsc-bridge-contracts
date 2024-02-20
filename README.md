@@ -1,3 +1,7 @@
+<div align="center">
+    <img src="assets/vaiotLogo.svg" alt="VAIOT Logo" width="400"/>
+</div>
+
 ETH-BSC Bridge Contracts
 
 This repository contains the smart contracts necessary for operating the ETH-BSC Bridge, facilitating seamless token transfers between the Ethereum (ETH) and Binance Smart Chain (BSC) networks. It includes the UpgradeableBridgeContract, along with token contracts for both networks, ensuring a flexible and secure bridge operation.
